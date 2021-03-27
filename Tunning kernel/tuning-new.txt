@@ -1,0 +1,340 @@
+class tunning::webserver {
+	file { "/etc/sysctl.conf":
+		ensure => "present",
+		content => "# Disable ipv6
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv4.tcp_fastopen = 3
+
+# Increase size of file handles and inode cache
+fs.file-max = 1048576
+fs.nr_open = 1048576   
+
+# Do less swapping
+vm.swappiness = 10
+vm.dirty_ratio = 60
+vm.dirty_background_ratio = 2
+
+# Sets the time before the kernel considers migrating a proccess to another core
+kernel.sched_migration_cost_ns = 5000000
+
+#Specifies how many connections the NAT can keep track of in the “tracking” table before it starts to drop packets and just break connections, this we totally want to avoid. The default value for this is 65536 so without this setting you wont be able to get more connections than that.
+# net.ipv4.netfilter.ip_conntrack_max = 1048576
+net.nf_conntrack_max = 1048576
+
+# Number of times SYNACKs for passive TCP connection.
+net.ipv4.tcp_synack_retries = 2
+
+# Allowed local port range
+net.ipv4.ip_local_port_range = 1024 65535
+
+# Protect Against TCP Time-Wait
+net.ipv4.tcp_rfc1337 = 1
+
+# Control Syncookies
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_orphans = 400000
+
+# Decrease the time default value for tcp_fin_timeout connection
+net.ipv4.tcp_fin_timeout = 20
+
+# Decrease the time default value for connections to keep alive
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_keepalive_intvl = 15
+
+### TUNING NETWORK PERFORMANCE ###
+
+#Maximum number of remembered connection requests, which are still did not receive an acknowledgment from connecting client. The default value is 1024 for systems with more than 128Mb of memory, and 128 for low memory machines
+net.ipv4.tcp_max_syn_backlog = 3240000
+
+# Default Socket Receive Buffer
+net.core.rmem_default = 31457280
+
+# Maximum Socket Receive Buffer
+net.core.rmem_max = 33554432
+
+# Default Socket Send Buffer
+net.core.wmem_default = 31457280
+
+# Maximum Socket Send Buffer
+net.core.wmem_max = 33554432
+
+# Increase number of incoming connections
+net.core.somaxconn = 65535
+
+# Increase number of incoming connections backlog
+net.core.netdev_max_backlog = 65536
+
+# Increase the maximum amount of option memory buffers
+net.core.optmem_max = 25165824
+
+# Increase the maximum total buffer-space allocatable
+# This is measured in units of pages (4096 bytes)
+net.ipv4.tcp_mem = 786432 1048576 26777216
+net.ipv4.udp_mem = 65536 131072 262144
+
+# Increase the read-buffer space allocatable
+net.ipv4.tcp_rmem = 8192 87380 33554432
+net.ipv4.udp_rmem_min = 16384
+
+# Increase the write-buffer-space allocatable
+net.ipv4.tcp_wmem = 8192 65536 33554432
+net.ipv4.udp_wmem_min = 16384
+
+# Increase the tcp-time-wait buckets pool size to prevent simple DOS attacks
+net.ipv4.tcp_max_tw_buckets = 1440000
+net.ipv4.tcp_no_metrics_save = 1
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_tw_reuse = 1
+#net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_congestion_control=cubic
+
+"
+	}->
+	file { "/etc/security/limits.conf":
+		ensure => "present",
+		content => "root soft nofile 1048576
+root hard nofile 1048576
+* soft nofile 1048576
+* hard nofile 1048576",
+	}->
+	exec { "Apply Sysctl":
+		command => "sysctl -p",
+		provider => "shell",
+		subscribe => File[ "/etc/sysctl.conf" ],
+		refreshonly => true,
+	}
+}
+
+class tunning::haproxy {
+	file { "/etc/sysctl.conf":
+		ensure => "present",
+		content => "# Disable ipv6
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv4.ip_forward = 1
+net.ipv4.ip_nonlocal_bind = 1
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_fastopen = 3
+
+# Increase size of file handles and inode cache
+fs.file-max = 1048576
+fs.nr_open = 1048576   
+
+# Do less swapping
+vm.swappiness = 10
+vm.dirty_ratio = 60
+vm.dirty_background_ratio = 2
+
+# Sets the time before the kernel considers migrating a proccess to another core
+kernel.sched_migration_cost_ns = 5000000
+
+# Number of times SYNACKs for passive TCP connection.
+net.ipv4.tcp_synack_retries = 1
+net.ipv4.tcp_syn_retries = 1
+
+# Allowed local port range
+net.ipv4.ip_local_port_range = 1024 65535
+
+# Protect Against TCP Time-Wait
+net.ipv4.tcp_rfc1337 = 1
+
+# Control Syncookies
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_orphans = 400000
+
+# Decrease the time default value for tcp_fin_timeout connection
+net.ipv4.tcp_fin_timeout = 20
+
+# Decrease the time default value for connections to keep alive
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_keepalive_intvl = 15
+
+### TUNING NETWORK PERFORMANCE ###
+
+#Maximum number of remembered connection requests, which are still did not receive an acknowledgment from connecting client. The default value is 1024 for systems with more than 128Mb of memory, and 128 for low memory machines
+net.ipv4.tcp_max_syn_backlog = 3240000
+
+# Default Socket Receive Buffer
+net.core.rmem_default = 31457280
+
+# Maximum Socket Receive Buffer
+net.core.rmem_max = 33554432
+
+# Default Socket Send Buffer
+net.core.wmem_default = 31457280
+
+# Maximum Socket Send Buffer
+net.core.wmem_max = 33554432
+
+# Increase number of incoming connections
+net.core.somaxconn = 65535
+
+# Increase number of incoming connections backlog
+net.core.netdev_max_backlog = 65536
+
+# Increase the maximum amount of option memory buffers
+net.core.optmem_max = 25165824
+
+# Increase the maximum total buffer-space allocatable
+# This is measured in units of pages (4096 bytes)
+net.ipv4.tcp_mem = 786432 1048576 26777216
+net.ipv4.udp_mem = 65536 131072 262144
+
+# Increase the read-buffer space allocatable
+net.ipv4.tcp_rmem = 8192 87380 33554432
+net.ipv4.udp_rmem_min = 16384
+
+# Increase the write-buffer-space allocatable
+net.ipv4.tcp_wmem = 8192 65536 33554432
+net.ipv4.udp_wmem_min = 16384
+
+# Increase the tcp-time-wait buckets pool size to prevent simple DOS attacks
+net.ipv4.tcp_max_tw_buckets = 1440000
+net.ipv4.tcp_no_metrics_save = 1
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_tw_reuse = 1
+#net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_congestion_control=cubic
+
+"
+	}->
+	file { "/etc/security/limits.conf":
+		ensure => "present",
+		content => "root soft nofile 1048576
+root hard nofile 1048576
+* soft nofile 1048576
+* hard nofile 1048576",
+	}->
+	exec { "Apply Sysctl":
+		command => "sysctl -p",
+		provider => "shell",
+		subscribe => File[ "/etc/sysctl.conf" ],
+		refreshonly => true,
+	}
+}
+
+class tunning::nginxproxy {
+	file { "/etc/sysctl.conf":
+		ensure => "present",
+		content => "# Disable ipv6
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv4.ip_forward = 1
+net.ipv4.ip_nonlocal_bind = 1
+net.ipv4.conf.default.accept_source_route = 0
+kernel.core_uses_pid = 1
+kernel.msgmnb = 65536
+kernel.msgmax = 65536
+net.ipv4.route.flush = 1
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_fastopen = 3
+
+# Increase size of file handles and inode cache
+fs.file-max = 1048576
+fs.nr_open = 1048576   
+
+# Do less swapping
+vm.swappiness = 10
+vm.dirty_ratio = 60
+vm.dirty_background_ratio = 2
+
+# Sets the time before the kernel considers migrating a proccess to another core
+kernel.sched_migration_cost_ns = 5000000
+
+#Specifies how many connections the NAT can keep track of in the “tracking” table before it starts to drop packets and just break connections, this we totally want to avoid. The default value for this is 65536 so without this setting you wont be able to get more connections than that.
+#net.ipv4.netfilter.ip_conntrack_max = 1048576
+net.nf_conntrack_max = 1048576
+
+# Number of times SYNACKs for passive TCP connection.
+net.ipv4.tcp_synack_retries = 1
+net.ipv4.tcp_syn_retries = 1
+
+# Allowed local port range
+net.ipv4.ip_local_port_range = 1024 65535
+
+# Protect Against TCP Time-Wait
+net.ipv4.tcp_rfc1337 = 1
+
+# Control Syncookies
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_orphans = 400000
+
+# Decrease the time default value for tcp_fin_timeout connection
+net.ipv4.tcp_fin_timeout = 20
+
+# Decrease the time default value for connections to keep alive
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_keepalive_intvl = 10
+
+### TUNING NETWORK PERFORMANCE ###
+
+#Maximum number of remembered connection requests, which are still did not receive an acknowledgment from connecting client. The default value is 1024 for systems with more than 128Mb of memory, and 128 for low memory machines
+net.ipv4.tcp_max_syn_backlog = 3240000
+
+# Default Socket Receive Buffer
+net.core.rmem_default = 31457280
+
+# Maximum Socket Receive Buffer
+net.core.rmem_max = 33554432
+
+# Default Socket Send Buffer
+net.core.wmem_default = 31457280
+
+# Maximum Socket Send Buffer
+net.core.wmem_max = 33554432
+
+# Increase number of incoming connections
+net.core.somaxconn = 65535
+
+# Increase number of incoming connections backlog
+net.core.netdev_max_backlog = 65536
+
+# Increase the maximum amount of option memory buffers
+net.core.optmem_max = 25165824
+
+# Increase the maximum total buffer-space allocatable
+# This is measured in units of pages (4096 bytes)
+net.ipv4.tcp_mem = 786432 1048576 26777216
+net.ipv4.udp_mem = 65536 131072 262144
+
+# Increase the read-buffer space allocatable
+net.ipv4.tcp_rmem = 8192 87380 33554432
+net.ipv4.udp_rmem_min = 16384
+
+# Increase the write-buffer-space allocatable
+net.ipv4.tcp_wmem = 8192 65536 33554432
+net.ipv4.udp_wmem_min = 16384
+
+# Increase the tcp-time-wait buckets pool size to prevent simple DOS attacks
+net.ipv4.tcp_max_tw_buckets = 1440000
+net.ipv4.tcp_no_metrics_save = 1
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_tw_reuse = 1
+#net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_congestion_control=cubic
+
+"
+	}->
+	file { "/etc/security/limits.conf":
+		ensure => "present",
+		content => "root soft nofile 1048576
+root hard nofile 1048576
+* soft nofile 1048576
+* hard nofile 1048576",
+	}->
+	exec { "Apply Sysctl":
+		command => "sysctl -p",
+		provider => "shell",
+		subscribe => File[ "/etc/sysctl.conf" ],
+		refreshonly => true,
+	}
+}

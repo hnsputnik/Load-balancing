@@ -1,0 +1,55 @@
+#####################################################
+#   ____ _                 _  ____            __ _   
+#  / ___| | ___  _   _  __| |/ ___|_ __ __ _ / _| |_ 
+# | |   | |/ _ \| | | |/ _` | |   | '__/ _` | |_| __|
+# | |___| | (_) | |_| | (_| | |___| | | (_| |  _| |_ 
+#  \____|_|\___/ \__,_|\__,_|\____|_|  \__,_|_|  \__|
+#
+# Website: https://cloudcraft.info
+# Facebook: https://www.facebook.com/CloudCraftTeam
+# Youtube: https://www.youtube.com/channel/UCe6hnAk19MgZIdhm4i11Mlg
+#
+###############################
+#### Disk partitioning     ####
+#### Author: nduytg        ####
+###############################
+
+### Install parted ###
+sudo apt-get install parted
+yum install parted
+
+### List Disks ###
+parted -l
+OR
+lsblk
+
+### Choosing Partitioning Standard ###
+parted /dev/sdb mklabel gpt
+OR
+parted /dev/sdb mklabel msdos
+
+### Create the New Partitioning ###
+parted /dev/sdb mkpart primary ext4 0% 100%
+lsblk
+
+### Create filesystem for the new partition ###
+mkfs.ext4 -L datapartition /dev/sdb1
+lsblk --fs
+OR
+lsblk -o NAME,FSTYPE,LABEL,UUID,MOUNTPOINT
+
+### Mount the new filesystem ###
+mkdir -p /mnt/data
+mount /dev/sdb1 /mnt/data
+
+
+### Mouting filesystem automatically at boot ###
+vi /etc/fstab
+[...]
+LABEL=datapartition /mnt/data ext4 defaults 0 2
+
+df -h
+touch /mnt/data/ducduy
+
+### Resize partition ###
+parted /dev/sdb1 resizepart
