@@ -1,0 +1,50 @@
+FROM kaldiasr/kaldi:2020-09 as builder
+COPY copy_lib.sh /opt/kaldi/src/lib/copy_lib.sh
+RUN cd /opt/kaldi/src/lib && bash copy_lib.sh
+RUN rm -rf /opt/kaldi/tools/openfst-1.6.7/src && \
+    rm -rf /opt/kaldi/tools/sctk-*
+FROM debian:9.8
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        liburi-encode-perl \
+        bzip2 \
+        unzip \
+        wget \
+        sox \
+        python3 \
+        python3-setuptools \
+        python3-pip \
+        zlib1g-dev \
+        locales \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+COPY --from=builder /opt/intel /opt/intel
+COPY --from=builder /opt/kaldi/src/featbin/paste-feats /usr/bin/paste-feats
+COPY --from=builder /opt/kaldi/src/featbin/compute-mfcc-feats /usr/bin/compute-mfcc-feats
+COPY --from=builder /opt/kaldi/src/featbin/compute-and-process-kaldi-pitch-feats /usr/bin/compute-and-process-kaldi-pitch-feats
+COPY --from=builder /opt/kaldi/src/featbin/compute-cmvn-stats /usr/bin/compute-cmvn-stats
+COPY --from=builder /opt/kaldi/src/featbin/copy-feats /usr/bin/copy-feats
+COPY --from=builder /opt/kaldi/src/featbin/apply-cmvn /usr/bin/apply-cmvn
+COPY --from=builder /opt/kaldi/src/nnet3bin/nnet3-compute /usr/bin/nnet3-compute
+COPY --from=builder /opt/kaldi/src/chainbin/nnet3-chain-compute-post /usr/bin/nnet3-chain-compute-post
+COPY --from=builder /opt/kaldi/src/bin/compile-train-graphs /usr/bin/compile-train-graphs
+COPY --from=builder /opt/kaldi/src/online2bin/ivector-extract-online2 /usr/bin/ivector-extract-online2
+COPY --from=builder /opt/kaldi/src/nnet3bin/nnet3-align-compiled /usr/bin/nnet3-align-compiled
+COPY --from=builder /opt/kaldi/src/bin/ali-to-phones /usr/bin/ali-to-phones
+COPY --from=builder /opt/kaldi/src/bin/compute-gop /usr/bin/compute-gop
+COPY --from=builder /opt/kaldi/src/lib /opt/kaldi/src/lib
+COPY --from=builder /opt/kaldi/tools /opt/kaldi/tools
+COPY --from=builder /opt/kaldi/egs/gop /opt/kaldi/egs/gop
+COPY --from=builder /opt/kaldi/egs/wsj/s5/utils /opt/kaldi/egs/gop/s5/utils
+COPY ./extras/nnet3-chain-custom-post /usr/bin/nnet3-chain-custom-post
+
+COPY ./requirements.txt /opt/kaldi/egs/gop/s5
+WORKDIR /opt/kaldi/egs/gop/s5
+RUN pip3 install -r requirements.txt
+EXPOSE 5000
+CMD ["python3", "src/start_gop_server.py"]
