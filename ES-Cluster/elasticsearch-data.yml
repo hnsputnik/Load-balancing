@@ -1,0 +1,13 @@
+cluster.name: vndslog 
+node.name: node-03
+node.master: false
+node.data: true
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+bootstrap.memory_lock: true
+network.host: 0.0.0.0
+http.port: 9200
+discovery.zen.ping.unicast.hosts: ["10.200.11.55", "10.200.11.56", "10.200.11.57", "10.200.11.58", "10.200.11.59", "10.200.11.60"]
+discovery.zen.minimum_master_nodes: 2
+thread_pool.search.size: 30
+thread_pool.search.queue_size: 10000
